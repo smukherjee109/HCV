@@ -1,0 +1,218 @@
+!pip install biopython
+!pip install matplotlib
+!pip install seaborn
+from Bio import SeqUtils
+from Bio import SeqIO
+from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from google.colab import drive
+drive.mount('/content/drive')
+seqList = []
+def fasta2list(HCV):
+    records = SeqIO.parse(HCV , 'fasta')
+    
+    for record in records:
+        desp = record.name
+        sequence = str(record.seq)
+        date = record.name[-4:]
+        t = record.name.split(',')
+        subtype = t[1].lower()
+        genotype = subtype[0]
+        length = len(record.seq)
+        #print(length)
+        GCc = (SeqUtils.GC(record.seq))
+        CpG = record.seq.count('CG')
+        
+        a = len(SeqUtils.nt_search(str(record.seq),'CNNNNGNCG'))
+        a1 = (SeqUtils.nt_search(str(record.seq),'CNNNNGNCG'))
+        b = len(SeqUtils.nt_search(str(record.seq),'CNNNNNGNCG'))
+        c = len(SeqUtils.nt_search(str(record.seq),'CNNNNNNGNCG'))
+        d = len(SeqUtils.nt_search(str(record.seq),'CNNNNNNNNGNCG'))
+        zap = a+b+c+d
+        OE = (CpG * length) / (record.seq.count('C') * record.seq.count('G'))
+        seqList.append([desp, sequence, subtype, genotype, length, GCc, int(date), int(CpG), float(OE), int(zap)])
+        print(a1)
+
+fasta2list('/content/drive/MyDrive/HCV2.fasta')
+df = pd.DataFrame(seqList)
+df.columns = ['name', 'sequence', 'subtype', 'genotype', 'length', 'GC_Content', 'Date', 'CpG', 'O/E', 'ZAP']
+conditions = [(df['Date']<=2002), (df['Date']>=2010)]
+value = ['before 2002', 'after 2010']
+df['time'] = np.select(conditions, value)
+
+#overall loss in ZAP binding motif before 2002 and after 2010
+filt = df['time'] != '0'
+a = df[filt]
+x = a["time"]
+y = a["ZAP"]
+sns.set_style("darkgrid")
+# setting the dimensions of the plot
+sns.set(font_scale = 1.5)
+fig, ax = plt.subplots(figsize=(8, 6))
+
+# drawing the plot
+sns.violinplot(x , y).set(xlabel = 'Year', ylabel = 'Number of ZAP-binding motifs')
+plt.savefig('ZAP_violin.png')
+plt.show()
+
+#overall loss in GC Content before 2002 and after 2010
+filt = df['time'] != '0'
+a = df[filt]
+x = a["time"]
+y = a["GC_Content"]
+sns.set_style("darkgrid")
+# setting the dimensions of the plot
+sns.set(font_scale = 1.25)
+fig, ax = plt.subplots(figsize=(7, 6))
+ 
+# drawing the plot
+sns.violinplot(x , y).set(xlabel = 'Year', ylabel = 'GC Content (in Percentage)')
+plt.savefig('GC_Overall_violin.png')
+plt.show()
+
+#overall loss in CpG Content before 2002 and after 2010
+filt = df['time'] != '0'
+a = df[filt]
+x = a["time"]
+y = a["CpG"]
+sns.set_style("darkgrid")
+# setting the dimensions of the plot
+sns.set(font_scale = 1.5)
+fig, ax = plt.subplots(figsize=(7, 6))
+ 
+# drawing the plot
+sns.violinplot(x , y).set(xlabel = 'Year', ylabel = 'Number of CpGs')
+plt.savefig('CpG_Overall_violin.png')
+plt.show()
+
+#overall loss in CpG O/E Content before 2002 and after 2010
+filt = df['time'] != '0'
+a = df[filt]
+x = a["time"]
+y = a["O/E"]
+sns.set_style("darkgrid")
+# setting the dimensions of the plot
+sns.set(font_scale = 1.5)
+fig, ax = plt.subplots(figsize=(8, 6))
+ 
+# drawing the plot
+sns.violinplot(x , y).set(xlabel = 'Year', ylabel = 'CpGs O/E')
+plt.savefig('OE_Overall_violin.png')
+plt.show()
+
+#Line plot for CpGs 
+filt=(df['Date']<=2018) & (df['Date']>=2001)
+new_b=df.loc[filt]
+x = new_b["Date"]
+y = new_b["CpG"]
+sns.set(font_scale = 1.5)
+sns.set_style("darkgrid")
+ 
+# setting the dimensions of the plot
+fig, ax = plt.subplots(figsize=(12.5, 5))
+ 
+# drawing the plot
+sns.lineplot(x , y).set(xlabel = 'Year', ylabel = 'Number of CpGs', xlim = (2001,2018))
+plt.savefig('CpG_overall.png')
+plt.show()
+
+#Line plot for CpGs O/E
+filt=(df['Date']<=2018) & (df['Date']>=2001)
+new_b=df.loc[filt]
+x = new_b["Date"]
+y = new_b["O/E"]
+sns.set(font_scale = 1.5)
+sns.set_style("darkgrid")
+ 
+# setting the dimensions of the plot
+fig, ax = plt.subplots(figsize=(12.5, 5))
+ 
+# drawing the plot
+sns.lineplot(x , y).set(xlabel = 'Year', ylabel = 'CpGs O/E', xlim = (2001,2018))
+plt.savefig('CpGOE.png')
+plt.show()
+
+#Line plot for GC Content
+filt=(df['Date']<=2018) & (df['Date']>=2001)
+new_b=df.loc[filt]
+x = new_b["Date"]
+y = new_b["GC_Content"]
+sns.set(font_scale = 1.2)
+sns.set_style("darkgrid")
+ 
+# setting the dimensions of the plot
+fig, ax = plt.subplots(figsize=(12.5, 5))
+ 
+# drawing the plot
+sns.lineplot(x , y).set(xlabel = 'Year', ylabel = 'GC Content (in percentage)', xlim = (2001,2018))
+plt.savefig('GC_overall.png')
+plt.show()
+
+#Line plot for ZAP-binding motifs
+filt=(df['Date']<=2018) & (df['Date']>=2001)
+new_b=df.loc[filt]
+x = new_b["Date"]
+y = new_b["ZAP"]
+sns.set(font_scale = 1.5)
+sns.set_style("darkgrid")
+ 
+# setting the dimensions of the plot
+fig, ax = plt.subplots(figsize=(12.5, 5))
+ 
+# drawing the plot
+sns.lineplot(x , y).set(xlabel = 'Year', ylabel = 'Number of ZAP-binding motifs', xlim = (2001,2018))
+plt.savefig('ZAP_Line_overall.png')
+plt.show()
+
+#Plot for correlation between CpGs and ZAP-binding motifs
+filt=(a['Date']<=2018) & (a['Date']>=2001)
+new_a=a.loc[filt]
+x = new_a["ZAP"]
+y = new_a["CpG"]
+sns.set(font_scale=1.2)
+sns.set_style("darkgrid")
+ 
+# setting the dimensions of the plot
+fig, ax = plt.subplots(figsize=(12.5, 8))
+ 
+# drawing the plot
+sns.regplot(x , y).set(xlabel = 'Number of ZAP binding Motifs', ylabel = 'Number of CpGs')
+plt.savefig('CpGvZAP.png')
+plt.show()
+ 
+#Counting CpG numbers in reference sequence
+ref = df.loc[0]
+s= SeqUtils.nt_search(str(ref.sequence),'CG')
+pos =  [*range(1, 9646)]
+y1 = []
+length1 = len(pos)
+print(pos)
+for i in pos:
+  if i in s:
+    y1.append(1)
+  else:
+    y1.append(0)
+print(y1)
+#Using Panda's rolling function for a moving average plot of CpGs in reference genome
+Y1 = pd.DataFrame(y1)
+Y1.columns = ['CpG']
+Y1['Roll'] = Y1.CpG.rolling(500,center = True).mean()
+Y1['Roll'] = Y1['Roll'].fillna(0)
+Y1
+#Figure 4C
+x = pos
+y = Y1['Roll'] 
+sns.set(font_scale=2)
+sns.set_style("darkgrid")
+ 
+# setting the dimensions of the plot
+fig, ax = plt.subplots(figsize=(15, 7))
+ 
+# drawing the plot
+sns.lineplot(x , y).set(xlabel = 'Nucleotide Position', ylabel = 'CpG Distribution', xlim = (0,10000))
+plt.xticks(np.arange(0, 10000, 500))
+plt.xticks(rotation = 45)
+plt.savefig('CpG distribution.pdf', dpi = 1000)
+plt.show()
